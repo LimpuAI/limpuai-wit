@@ -1,0 +1,17 @@
+[package]
+name = "limpuai-wit-parquet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+bytes = "1"
+parquet = { version = "54", default-features = false, features = ["snap"] }
+wit-bindgen = "0.57"
+
+[dev-dependencies]
+arrow = { version = "54", default-features = false, features = ["ipc"] }
+parquet = { version = "54", default-features = false, features = ["arrow", "snap"] }

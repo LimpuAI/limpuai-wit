@@ -1,0 +1,25 @@
+# Third-Party Licenses
+
+This document lists the licenses of the third-party crates used by limpuai-wit.
+
+## Overview
+
+{{#each overview}}
+- {{name}} ({{count}} crates)
+{{/each}}
+
+## License Details
+
+{{#each licenses}}
+### {{name}}
+
+Used by:
+{{#each used_by}}
+- {{crate.name}} {{crate.version}}
+{{/each}}
+
+```
+{{text}}
+```
+
+{{/each}}

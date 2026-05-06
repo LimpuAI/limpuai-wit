@@ -17,7 +17,7 @@
 - [x] parquet-parser 组件编译到 wasm32-wasip2，导出 parse 函数
 - [x] 宿主可通过运行时动态链接使用这两个组件
 - [x] 任何项目只需引用相同的 WIT 接口即可对接
-- [ ] 使用 `cargo about` 生成 `THIRD-PARTY-LICENSES` 文件（含上游 crate 许可声明）
+- [x] 使用 `cargo about` 生成 `THIRD-PARTY-LICENSES` 文件（含上游 crate 许可声明）
 
 ## Edge cases
 - [x] 无效数据格式返回明确错误信息

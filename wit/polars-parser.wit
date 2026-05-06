@@ -1,0 +1,91 @@
+package limpuai:data;
+
+interface polars-parser {
+    use types.{data-table, field-value, schema-field};
+
+    /// Filter comparison operators
+    enum filter-op {
+        eq,
+        neq,
+        gt,
+        gte,
+        lt,
+        lte,
+    }
+
+    /// Aggregate functions
+    enum agg-fn {
+        sum,
+        mean,
+        min,
+        max,
+        count,
+        first,
+        last,
+    }
+
+    /// Sort direction per column
+    record sort-option {
+        column: string,
+        descending: bool,
+        null-last: bool,
+    }
+
+    /// Aggregation request
+    record aggregation {
+        column: string,
+        function: agg-fn,
+        alias: option<string>,
+    }
+
+    /// Join types
+    enum join-type {
+        inner,
+        left,
+        right,
+        full,
+    }
+
+    /// DataFrame resource — holds an in-memory Polars DataFrame
+    resource dataframe {
+        /// Get column schema
+        columns: func() -> list<schema-field>;
+        /// Number of rows
+        height: func() -> u64;
+        /// Number of columns
+        width: func() -> u64;
+
+        /// Select columns by name, returns new dataframe
+        select: func(columns: list<string>) -> result<dataframe, string>;
+        /// Filter rows by column comparison
+        filter: func(column: string, op: filter-op, value: field-value) -> result<dataframe, string>;
+        /// Sort by multiple columns
+        sort: func(by: list<sort-option>) -> result<dataframe, string>;
+        /// Take first N rows
+        head: func(n: u64) -> result<dataframe, string>;
+        /// Take last N rows
+        tail: func(n: u64) -> result<dataframe, string>;
+        /// Remove duplicate rows (optionally by subset of columns)
+        unique: func(subset: option<list<string>>) -> result<dataframe, string>;
+
+        /// Group by columns and aggregate
+        group-by: func(by: list<string>, aggregations: list<aggregation>) -> result<dataframe, string>;
+
+        /// Export to shared DataTable type
+        to-table: func() -> result<data-table, string>;
+    }
+
+    /// Parse CSV bytes into a DataFrame
+    parse-csv: func(data: list<u8>) -> result<dataframe, string>;
+    /// Parse JSON/NDJSON bytes into a DataFrame
+    parse-json: func(data: list<u8>) -> result<dataframe, string>;
+
+    /// Join two DataFrames (interface-level function taking two resource handles)
+    join: func(left: dataframe, right: dataframe,
+               left-on: list<string>, right-on: list<string>,
+               how: join-type) -> result<dataframe, string>;
+}
+
+world polars-dataframe {
+    export polars-parser;
+}

@@ -1,0 +1,29 @@
+[package]
+name = "limpuai-wit-polars"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+polars = { version = "0.53", default-features = false, features = [
+    "csv",
+    "json",
+    "temporal",
+    "dtype-slim",
+    "rows",
+    "zip_with",
+    "round_series",
+    "is_in",
+    "diff",
+    "abs",
+    "cum_agg",
+    "rolling_window",
+    "unique_counts",
+    "diagonal_concat",
+    "strings",
+    "dtype-full",
+] }
+wit-bindgen = "0.57"

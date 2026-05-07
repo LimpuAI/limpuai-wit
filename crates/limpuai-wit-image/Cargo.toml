@@ -1,0 +1,15 @@
+[package]
+name = "limpuai-wit-image"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = [
+    "bmp", "exr", "ff", "gif", "hdr", "ico", "jpeg", "png",
+    "pnm", "qoi", "tga", "tiff", "webp"
+] }
+wit-bindgen = "0.57"

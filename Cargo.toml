@@ -4,6 +4,7 @@ members = [
     "crates/limpuai-wit-parquet",
     "crates/limpuai-wit-polars",
     "crates/limpuai-wit-symphonia",
+    "crates/limpuai-wit-image",
 ]
 resolver = "2"
 

@@ -1,0 +1,41 @@
+package limpuai:data;
+
+interface audio-decoder {
+    /// Audio metadata returned by audio-file.info()
+    record audio-info {
+        codec: string,
+        format: string,
+        sample-rate: u32,
+        channels: u16,
+        duration-ms: option<u64>,
+        bit-depth: option<u16>,
+    }
+
+    /// Decoded audio chunk returned by audio-file.decode-chunk()
+    record audio-chunk {
+        samples: list<f32>,
+        frame-count: u64,
+        timestamp-ms: u64,
+    }
+
+    /// Audio resource — holds a Symphonia decoder with format reader state
+    resource audio-file {
+        /// Get audio metadata (codec, format, sample rate, channels, duration, bit depth)
+        info: func() -> audio-info;
+        /// Decode entire audio to interleaved PCM f32 samples
+        decode-all: func() -> result<list<f32>, string>;
+        /// Decode next chunk of up to max-frames frames
+        decode-chunk: func(max-frames: u64) -> result<audio-chunk, string>;
+        /// Seek to timestamp in milliseconds
+        seek: func(timestamp-ms: u64) -> result<bool, string>;
+        /// Current playback position in milliseconds
+        position: func() -> u64;
+    }
+
+    /// Parse audio bytes into an audio-file resource
+    parse-audio: func(data: list<u8>) -> result<audio-file, string>;
+}
+
+world symphonia-audio {
+    export audio-decoder;
+}

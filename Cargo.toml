@@ -3,6 +3,7 @@ members = [
     "crates/limpuai-wit-arrow",
     "crates/limpuai-wit-parquet",
     "crates/limpuai-wit-polars",
+    "crates/limpuai-wit-symphonia",
 ]
 resolver = "2"
 

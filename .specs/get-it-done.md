@@ -49,3 +49,15 @@ Resolved items from might-it-be.md with resolution context.
 **Original**: cc-review 发现 design.md 两处与实际实现不一致。
 
 **Resolution**: (1) seek 签名 `result<(), string>` → `result<bool, string>`（WIT 不支持 `()` 类型）；(2) `RefCell<AudioFileImpl>` → `AudioFileImpl { inner: RefCell<AudioFileInner> }`（RefCell 封装在内部），新增 `leftover: Vec<f32>` 缓冲字段。design.md 已全面更新。
+
+## Resolved: image-rs/image WASM 编译可行性 (2026-05-07)
+
+**Original**: 评估 image-rs/image 编译为 WASI Component 的可行性。
+
+**Resolution**: 确认可行。所有编解码器（JPEG/PNG/GIF/WebP/TIFF/BMP 等）均为纯 Rust，rayon 是可选 feature（`default-features = false` 禁用），WASI P2 提供完整 std 支持。历史 WASM 问题（#879, #1588 等）均已在 0.25.x 中解决。WASM 产物 3.2 MB，21 个测试全部通过。
+
+## Resolved: image design.md WIT 结构与 world 命名 (2026-05-07)
+
+**Original**: cc-review（Oracle）发现 design.md 中 WIT 结构与实际实现不一致：design 使用 inline world exports，实现使用 named interface + world；world 名称 design 说 `image-processor`，实际用 `image-data`。
+
+**Resolution**: 更新 design.md 反映实际实现。实现主动选择遵循项目惯例（symphonia: interface `audio-decoder` + world `symphonia-audio`），world 名与 interface 名分开。同时澄清了 `invert` 双重语义（原地修改 + 返回克隆）和 `encode-image` consume handle 的 API 设计。

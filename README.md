@@ -25,6 +25,7 @@ flowchart TB
         Parquet["parquet-parser.wit<br/>parse()"]
         Polars["polars-parser.wit<br/>DataFrame Resource"]
         Audio["audio-decoder.wit<br/>AudioFile Resource"]
+        Image["image-processor.wit<br/>ImageHandle Resource"]
     end
 
     subgraph "WASM Components"
@@ -32,13 +33,15 @@ flowchart TB
         CP["limpuai-wit-parquet<br/>Parquet"]
         CPL["limpuai-wit-polars<br/>Polars DataFrame"]
         CS["limpuai-wit-symphonia<br/>Symphonia Audio"]
+        CI["limpuai-wit-image<br/>Image Processing"]
     end
 
-    Host --> Arrow & Parquet & Polars & Audio
+    Host --> Arrow & Parquet & Polars & Audio & Image
     Arrow --> CA
     Parquet --> CP
     Polars --> CPL
     Audio --> CS
+    Image --> CI
     Polars -.-> Types
     Arrow -.-> Types
     Parquet -.-> Types
@@ -52,6 +55,7 @@ flowchart TB
 | **limpuai-wit-parquet** | Parquet 解析 | `parquet` 54.x | ~6.1 MB |
 | **limpuai-wit-polars** | DataFrame 操作 (CSV/JSON/Select/Filter/Sort/GroupBy/Join) | `polars` 0.53 | ~26 MB |
 | **limpuai-wit-symphonia** | 音频解码 (WAV/FLAC/MP3/OGG/AIFF) | `symphonia` 0.5 | ~1.5 MB |
+| **limpuai-wit-image** | 图像解码/操作/编码 (PNG/JPEG/GIF/WebP/TIFF/BMP/...) | `image` 0.25 | ~3.2 MB |
 
 ## 项目结构
 
@@ -62,11 +66,13 @@ wit/                          # 统一 WIT 定义 (limpuai:data)
   parquet-parser.wit          # Parquet 解析接口 + world
   polars-parser.wit           # Polars DataFrame resource 接口 + world
   audio-decoder.wit           # 音频解码 resource 接口 + world
+  image-processor.wit         # 图像处理 resource 接口 + world
 crates/
   limpuai-wit-arrow/          # Arrow IPC 解析组件
   limpuai-wit-parquet/        # Parquet 解析组件
   limpuai-wit-polars/         # Polars DataFrame 组件
   limpuai-wit-symphonia/      # 音频解码组件
+  limpuai-wit-image/          # 图像解码/操作/编码组件
 ```
 
 ## WIT 接口
@@ -129,6 +135,62 @@ parse-audio: func(data: list<u8>) -> result<audio-file, string>;
 
 支持的音频格式：WAV (PCM)、FLAC、MP3 (MPEG Audio Layer III)、OGG Vorbis、AIFF。
 
+### Image Processor — Resource 接口
+
+通过 WIT resource 持有图像状态，支持解码、基本操作和编码输出：
+
+```wit
+resource image-handle {
+    width: func() -> u32;
+    height: func() -> u32;
+    color-type: func() -> color-type;
+    pixel-data: func() -> list<u8>;
+    resize: func(width: u32, height: u32) -> result<image-handle, string>;
+    crop: func(x: u32, y: u32, width: u32, height: u32) -> result<image-handle, string>;
+    blur: func(sigma: f32) -> result<image-handle, string>;
+    brighten: func(value: f32) -> result<image-handle, string>;
+    contrast: func(value: f32) -> result<image-handle, string>;
+    grayscale: func() -> result<image-handle, string>;
+    invert: func() -> result<image-handle, string>;
+    fliph: func() -> result<image-handle, string>;
+    flipv: func() -> result<image-handle, string>;
+    rotate90: func() -> result<image-handle, string>;
+    rotate180: func() -> result<image-handle, string>;
+    rotate270: func() -> result<image-handle, string>;
+}
+decode-image: func(data: list<u8>) -> result<image-handle, string>;
+encode-image: func(img: image-handle, format: output-format, quality: option<u8>) -> result<list<u8>, string>;
+image-info: func(data: list<u8>) -> result<image-meta, string>;
+```
+
+支持的图像格式（解码）：PNG、JPEG、GIF、WebP、TIFF、BMP、ICO、PNM、QOI、TGA、HDR、Farbfeld、EXR。
+支持的编码输出格式：PNG、JPEG、BMP、GIF、TIFF、ICO、WebP、PNM。
+
+> **注意**: `encode-image` 按值接收 `image-handle`（WIT 语义下 handle 被 consume），调用后该 handle 在宿主端失效。`invert` 操作会原地修改图像像素。
+
+#### 数据流
+
+```mermaid
+sequenceDiagram
+    participant Host as 宿主
+    participant Image as image-handle Resource
+
+    Host->>Image: decode-image(bytes)
+    Image-->>Host: Ok(image-handle)
+
+    Host->>Image: width() / height() / color-type()
+    Image-->>Host: 元数据
+
+    Host->>Image: pixel-data()
+    Image-->>Host: list<u8> (原始像素字节)
+
+    Host->>Image: resize(200, 200) / blur(1.5) / ...
+    Image-->>Host: Ok(image-handle) [新 handle]
+
+    Host->>Image: encode-image(handle, png, none)
+    Image-->>Host: Ok(list<u8>) [编码后字节]
+```
+
 #### 数据流
 
 ```mermaid
@@ -189,6 +251,21 @@ sequenceDiagram
 | `SignalSpec` (rate, channels) | `audio-info.sample-rate`, `audio-info.channels` |
 | `Time` (seconds + frac) | `timestamp-ms: u64` (毫秒) |
 
+### Image → WIT
+
+| image-rs ColorType | WIT color-type | 字节/像素 |
+|---|---|---|
+| L8 | `l8` | 1 |
+| La8 | `la8` | 2 |
+| Rgb8 | `rgb8` | 3 |
+| Rgba8 | `rgba8` | 4 |
+| L16 | `l16` | 2 |
+| La16 | `la16` | 4 |
+| Rgb16 | `rgb16` | 6 |
+| Rgba16 | `rgba16` | 8 |
+| Rgb32F | `rgb32f` | 12 |
+| Rgba32F | `rgba32f` | 16 |
+
 ## 构建
 
 需要 `wasm32-wasip2` target：
@@ -209,6 +286,7 @@ cargo build --target wasm32-wasip2 --release -p limpuai-wit-symphonia
 - `target/wasm32-wasip2/release/limpuai_wit_parquet.wasm` (~6.1 MB)
 - `target/wasm32-wasip2/release/limpuai_wit_polars.wasm` (~26 MB)
 - `target/wasm32-wasip2/release/limpuai_wit_symphonia.wasm` (~1.5 MB)
+- `target/wasm32-wasip2/release/limpuai_wit_image.wasm` (~3.2 MB)
 
 ## 测试
 
@@ -225,6 +303,7 @@ cargo test -p limpuai-wit-symphonia  # 单个组件
 | `parquet` | 54.x | Apache-2.0 | Parquet 解析 |
 | `polars` | 0.53 | MIT | DataFrame 操作 |
 | `symphonia` | 0.5 | MPL-2.0 | 音频解码 |
+| `image` | 0.25 | MIT OR Apache-2.0 | 图像解码/操作/编码 |
 | `wit-bindgen` | 0.57 | Apache-2.0 | WIT 绑定生成 |
 
 第三方许可证详情见 [`THIRD-PARTY-LICENSES.md`](THIRD-PARTY-LICENSES.md)。

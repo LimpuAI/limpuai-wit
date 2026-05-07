@@ -1,0 +1,84 @@
+package limpuai:data;
+
+interface image-processor {
+    /// Represents different color types in image data
+    enum color-type {
+        l8,
+        la8,
+        rgb8,
+        rgba8,
+        l16,
+        la16,
+        rgb16,
+        rgba16,
+        rgb32f,
+        rgba32f
+    }
+
+    /// Supported output formats for encoding
+    enum output-format {
+        png,
+        jpeg,
+        bmp,
+        gif,
+        tiff,
+        ico,
+        webp,
+        pnm
+    }
+
+    /// Metadata about an image
+    record image-meta {
+        width: u32,
+        height: u32,
+        color-type: color-type,
+        format: string
+    }
+
+    /// Image resource — holds image data in memory
+    resource image-handle {
+        /// Get the width of the image in pixels
+        width: func() -> u32;
+        /// Get the height of the image in pixels
+        height: func() -> u32;
+        /// Get the color type of the image
+        color-type: func() -> color-type;
+        /// Get raw pixel data as a byte list
+        pixel-data: func() -> list<u8>;
+        /// Resize the image to the specified dimensions
+        resize: func(width: u32, height: u32) -> result<image-handle, string>;
+        /// Crop the image to the specified rectangle
+        crop: func(x: u32, y: u32, width: u32, height: u32) -> result<image-handle, string>;
+        /// Apply blur effect with the given sigma value
+        blur: func(sigma: f32) -> result<image-handle, string>;
+        /// Brighten the image by the given value
+        brighten: func(value: f32) -> result<image-handle, string>;
+        /// Adjust the contrast of the image by the given value
+        contrast: func(value: f32) -> result<image-handle, string>;
+        /// Convert the image to grayscale
+        grayscale: func() -> result<image-handle, string>;
+        /// Invert the colors of the image
+        invert: func() -> result<image-handle, string>;
+        /// Flip the image horizontally
+        fliph: func() -> result<image-handle, string>;
+        /// Flip the image vertically
+        flipv: func() -> result<image-handle, string>;
+        /// Rotate the image 90 degrees clockwise
+        rotate90: func() -> result<image-handle, string>;
+        /// Rotate the image 180 degrees
+        rotate180: func() -> result<image-handle, string>;
+        /// Rotate the image 270 degrees clockwise
+        rotate270: func() -> result<image-handle, string>;
+    }
+
+    /// Decode image bytes into an image-handle resource
+    decode-image: func(data: list<u8>) -> result<image-handle, string>;
+    /// Encode an image to bytes in the specified format with optional quality
+    encode-image: func(img: image-handle, format: output-format, quality: option<u8>) -> result<list<u8>, string>;
+    /// Get metadata from image bytes without decoding the full image
+    image-info: func(data: list<u8>) -> result<image-meta, string>;
+}
+
+world image-data {
+    export image-processor;
+}
